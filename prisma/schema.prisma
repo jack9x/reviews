@@ -19,7 +19,6 @@ model Session {
   state         String
   isOnline      Boolean   @default(false)
   scope         String?
-  expires       DateTime?
   accessToken   String
   userId        BigInt?
   firstName     String?
@@ -29,21 +28,6 @@ model Session {
   locale        String?
   collaborator  Boolean?  @default(false)
   emailVerified Boolean?  @default(false)
-}
-
-model EmailQueue {
-  id          Int       @id @default(autoincrement())
-  shop          String
-  orderId       String
-  fulfillment_at DateTime
-  send_schedule_at DateTime
-  status      EmailStatus @default(PENDING)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-}
-
-enum EmailStatus {
-  PENDING
-  SENT
-  FAILED
+  @@map("Session")
+  @@schema("public")
 }
