@@ -3,7 +3,6 @@
 
 generator client {
   provider = "prisma-client-js"
-  previewFeatures = ["multiSchema"]
 }
 
 // Note that some adapters may set a maximum length for the String type by default, please ensure your strings are long
@@ -29,6 +28,4 @@ model Session {
   locale        String?
   collaborator  Boolean?  @default(false)
   emailVerified Boolean?  @default(false)
-  @@map("Session")
-  @@schema("public")
 }
