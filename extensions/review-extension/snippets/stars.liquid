@@ -1,0 +1,78 @@
+{% comment %}
+Usage:
+{% render 'stars', rating: 3, maxRating: 5, size: 16, interactive: true %}
+{% endcomment %}
+
+{% assign rating = rating | default: 0 %}
+{% assign max_rating = max_rating | default: 5 %}
+{% assign size = size | default: 12 %}
+{% assign interactive = interactive | default: false %}
+
+<style>
+  .star-rating {
+    display: flex;
+    gap: 0.125rem;
+    cursor: {% if interactive %}pointer{% else %}default{% endif %};
+  }
+  .star-rating svg {
+    transition: fill 0.15s ease;
+  }
+</style>
+
+<div 
+  class="star-rating" 
+  data-rating="{{ rating }}" 
+  data-max="{{ maxRating }}" 
+  data-size="{{ size }}" 
+  data-interactive="{{ interactive }}">
+  {% for i in (1..maxRating) %}
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 18" width="{{ size }}" height="{{ size }}" data-star="{{ i }}">
+      <path d="M8.536.734c.323-.979 1.73-.979 2.053 0l1.517 4.595c.145.437.56.733 1.027.733h4.91c1.046 0 1.48 1.317.635 1.921l-3.973 2.84c-.378.27-.537.75-.392 1.187l1.518 4.595c.323.979-.815 1.792-1.661 1.187l-3.973-2.84c-.378-.27-.89-.27-1.269 0l-3.973 2.84c-.846.605-1.984-.208-1.66-1.187l1.517-4.595a1.052 1.052 0 00-.392-1.187L.447 7.983c-.846-.604-.411-1.92.634-1.92h4.911c.468 0 .882-.297 1.027-.734L8.536.734z"/>
+    </svg>
+  {% endfor %}
+</div>
+
+<script>
+  (function() {
+    document.querySelectorAll('.star-rating').forEach(function(starContainer) {
+      let rating = parseInt(starContainer.dataset.rating, 10);
+      const max = parseInt(starContainer.dataset.max, 10);
+      const interactive = starContainer.dataset.interactive === 'true';
+      let hoverRating = 0;
+
+      const updateStars = (tempRating) => {
+        starContainer.querySelectorAll('svg').forEach((svg, index) => {
+          const starValue = index + 1;
+          const isFilled = (tempRating || rating) >= starValue;
+          svg.querySelector('path').setAttribute('fill', isFilled ? '#FFAC70' : '#D5DDE7');
+        });
+      };
+
+      updateStars();
+
+      if (interactive) {
+        starContainer.querySelectorAll('svg').forEach((svg, index) => {
+          const starValue = index + 1;
+
+          svg.addEventListener('mouseenter', () => {
+            hoverRating = starValue;
+            updateStars(hoverRating);
+          });
+
+          svg.addEventListener('mouseleave', () => {
+            hoverRating = 0;
+            updateStars();
+          });
+
+          svg.addEventListener('click', () => {
+            rating = starValue; 
+            starContainer.dataset.rating = starValue;
+            updateStars();
+            const event = new CustomEvent('starRatingChange', { detail: { rating: starValue } });
+            starContainer.dispatchEvent(event);
+          });
+        });
+      }
+    });
+  })();
+</script>

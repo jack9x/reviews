@@ -1,0 +1,332 @@
+
+{% schema %}
+{
+  "name": "Seed Review",
+  "target": "section",
+}
+{% endschema %}
+
+
+{% comment %} Widget Settings {% endcomment %}
+ {% assign widget_settings = shop.metaobjects['$app:review_widget_settings'].values %}
+  {% for setting in widget_settings %}
+    {% assign media_size = setting.mediaSize.value %}
+    {% assign show_summary = setting.showSummary.value %}
+    {% assign allow_media = setting.allowMedia.value %}
+    {% assign layout = setting.layout.value %}
+  {% endfor %}
+ {% assign mode = "desktop" %}
+ {% assign style_desktop = "width: 100%; display: flex; align-items: center; justify-content: center;" %}
+{% assign style_mobile = "width: 375px; margin: 0 auto; display: flex; align-items: center; justify-content: center;" %}
+{% if media_size == "thumbnail" %} {% assign media_size_px = 50 %} {% elsif media_size == "medium" %} {% assign media_size_px = 60 %} {% elsif media_size == "large" %} {% assign media_size_px = 80 %} {% else %} {% assign media_size_px = 60 %} {% endif %}
+
+{% comment %} Text Font {% endcomment %}
+{% assign tone_base =  "color: #303030;"%}
+{% assign tone_subdued =  "color: #616161;"%}
+{% assign font_body_sm = "font-size: 12px; font-weight: 450; line-height: 16px; margin: 0;" %}
+{% assign font_body_md = "font-size: 13px; font-weight: 450; line-height: 20px; margin: 0;" %}
+{% assign font_heading_lg = "font-size: 20px; font-weight: 650; line-height: 24px; margin: 0;" %}
+
+{% comment %} Review Processor {% endcomment %}
+{% assign all_reviews = product.metafields.product_review.reviews.value %} 
+{% assign product_average_review = product.metafields.product_review.product_average.value %}
+
+{% assign average_rating = product_average_review.averageRating %}
+{% assign total_reviews = product_average_review.count.totalReviews %}
+
+{% assign rating_counts_1 = product_average_review.count.rating["1"] %}
+{% assign rating_counts_2 = product_average_review.count.rating["2"] %}
+{% assign rating_counts_3 = product_average_review.count.rating["3"] %}
+{% assign rating_counts_4 = product_average_review.count.rating["4"] %}
+{% assign rating_counts_5 = product_average_review.count.rating["5"] %}
+
+{% assign rating_counts = rating_counts_5 | append: "," | append: rating_counts_4 | append: "," | append: rating_counts_3 | append: "," | append: rating_counts_2 | append: "," | append: rating_counts_1 | split: "," %}
+
+
+{% comment %} Render UI {% endcomment %}
+<div id="reviews-root" data-product-id="gid://shopify/Product/{{ product.id }}" data-shop-domain={{ shop.domain }}
+  {% if customer %}
+    data-customer-id="gid://shopify/Customer/{{ customer.id }}"
+  {% endif %}  
+  style={{ style_desktop }} >
+
+  {% if show_summary %}
+    <div style="box-sizing: border-box; display: flex; align-items: center; justify-content: center; flex-wrap: wrap; gap: 1rem; border: 1px solid #e0e0e0; padding: 1.25rem; border-radius: 8px; max-width: 400px; margin-bottom: 1rem;">
+
+      <div style="display: flex; flex-direction: column; align-items: center; gap: 0.5rem; {{ tone_base }}">
+        <span style="font-size: 40px; font-weight: 600; line-height: 36px;">
+          {% if average_rating == blank %}0{% else %}{{ average_rating }}{% endif %}
+        </span>
+        <div style="display: flex; align-items: center; gap: 7px;">
+        </div>
+        <span style="font-size: 16px; font-weight: 400; line-height: 24px; {{ tone_base }}">
+          {% if total_reviews == blank %}0{% else %}{{ total_reviews }}{% endif %} reviews
+        </span>
+      </div>
+      
+      <div style="display: flex; flex-direction: column; gap: 0.5rem; flex: 1;">
+        {% assign ratings = "5,4,3,2,1" | split: "," %}
+        {% for rating in ratings %}
+          {% assign count = rating_counts[forloop.index0] | plus: 0 %}
+          {% assign perc = 0 %}
+          {% if total_reviews > 0 %}
+            {% assign perc = count | times: 100 | divided_by: total_reviews %}
+          {% endif %}
+
+          <div style="font-size: 16px; display: flex; align-items: center; gap: 1rem; color: #555;">
+            <div style="flex-basis: 40px; text-align: right; flex-shrink: 0;">
+              <span style="{{ font_body_sm }}; {{ tone_subdued }}">{{ rating }} ★</span>
+            </div>
+
+            <!-- Progress bar -->
+            <div style="flex-grow: 1; background-color: #E3E3E3; border-radius: 5px; height: 8px; overflow: hidden;">
+              <div style="display: block; width: {{ perc }}%; height: 100%; background-color: #91D0FF; transition: width 0.25s ease;"></div>
+            </div>
+
+            <div style="text-align: left; flex-shrink: 0;">
+              <span style="{{ font_body_sm }}; {{ tone_subdued }}">{{ count }}</span>
+            </div>
+          </div>
+        {% endfor %}
+      </div>
+
+    </div>
+  {% endif %} 
+
+  <div id="my-flex" style="display: flex; gap: 5rem;">
+    {% comment %} Customer Reviews {% endcomment %}
+    <div style="flex: 1; max-width: calc(100% - 16px); margin-top: 16px">
+      <div>
+        <h3 style="{{ font_heading_lg }} {{ tone_base }} ">Customer reviews</h3>
+        <div style="padding-top: 18px; padding-right: {% if mode == 'mobile' %}0px{% else %}18px{% endif %};">
+          {% if product_average_review == blank%}
+            <div>There are no reviews yet.</div>
+          {%  endif %}
+          {% for review in all_reviews %}
+            {% if review %}
+              {% assign author = review.fullName.value %}
+              {% assign date = review.submittedAt.value | date: '%B %d, %Y' %}
+              {% assign rating_stripped = review.rating.value | remove: '"' %}
+              {% assign rating = rating_stripped | plus: 0 %}
+              {% assign content = review.body.value %}
+              {% assign media_str = review.media.value %}
+              {% assign media_items = media_str | split: "," %}
+
+              <div>
+                <div style="display: flex; justify-content: space-between; margin-bottom: 0.25rem;">
+                  <div style="display: flex;">
+                    <div style="width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background-color: #e3e3e3; font-size: 16px; font-weight: 600; color: #333;">
+                      {{ author | slice: 0 | upcase }}
+                    </div>
+                    <div style="display: flex; flex-direction: column; gap: .25rem; margin-left: 0.5rem;">
+                      <div>
+                        <p style="font-size: 13px; font-weight: 650; line-height: 20px; margin: 0; {{ tone_base }}">{{ author }}</p>
+                      </div>
+                      <div>
+                        {% render 'stars', rating: rating, maxRating: 5, size: 12, interactive: false %}
+                      </div>
+                    </div>
+                  </div>
+                  <div style="display: flex; gap: 18px;">
+                    <span style="{{ font_body_sm }} {{ tone_subdued }}">{{ date }}</span>
+                  </div>
+                </div>
+
+                <div>
+                  <p style="{{ font_body_md }} {{ tone_base }}">{{ content }}</p>
+                  <div style="padding-top: 18px; display: flex; gap: 4px;">
+                    {% if allow_media %}
+                      {% for media_item in media_items %}
+                        {% if media_item != blank %}
+                          {% assign type_url = media_item | split: ":" %}
+                          {% assign m_type = type_url[0] | strip %}
+                          {% assign m_url = type_url | slice: 1, type_url.size | join: ":" | strip %}
+                          {% if m_type == "video" %}
+                            <video width="{{ media_size_px }}" height="{{ media_size_px }}" controls playsinline style="object-fit: cover; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; border: 2px solid #f1f1f1; transition: transform 0.2s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                              <source src="{{ m_url }}" type="video/mp4">
+                              Your browser does not support the video tag.
+                            </video>
+                          {% else %}
+                            <img src="{{ m_url }}" alt="Review media" width="{{ media_size_px }}" height="{{ media_size_px }}" style="width: {{ media_size_px }}px; height: {{ media_size_px }}px; object-fit: cover; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); cursor: pointer; border: 2px solid #f1f1f1; transition: transform 0.2s ease;" onmouseover="this.style.transform='scale(1.05)'" onmouseout="this.style.transform='scale(1)'">
+                          {% endif %}
+                        {% endif %}
+                      {% endfor %}
+                    {% endif %}
+                  </div>
+                </div>
+
+                {% unless forloop.last %}
+                  <div style="padding: 18px 0px;">
+                    <hr style="border: 0; border-block-start: 0.0625rem solid #EBEBEB; margin: 0; height: 0; background-color: transparent">
+                  </div>
+                {% endunless %}
+              </div>
+            {% endif %}
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
+    <div style="flex: 1; margin-top: 16px; max-width: calc(100% - 16px);">
+      {% comment %} Average Score {% endcomment %}
+      <div style="display: flex; justify-content: space-between; flex-wrap: wrap; margin-top: {% if mode == 'mobile' %}30px{% else %}0{% endif %}">
+        <h3 style="{{ font_heading_lg }} {{ tone_base }}">Average score</h3>
+        <div>
+          {% render 'stars', rating: average_rating, maxRating: 5, size: 18 %}
+          <span style="{{ font_body_md }} {{ tone_subdued }}">{{ average_rating | round: 1 }} out of 5</span>
+        </div>
+      </div>
+      <div style="padding-top: 18px;">
+        <p style="{{ font_body_md }} {{ tone_subdued }}">Your email address will not be published. Required fields are marked *</p>
+        {% comment %} Rating {% endcomment %}
+        <div id="review-form" style="display: flex; flex-direction: column; gap: 16px;">
+          <div style="padding-top: 18px;">
+            <p style="{{ font_body_md }} {{ tone_base }}">Your rating</p>
+            <div>
+              {% render 'stars', rating: 0, maxRating: 5, size: 30, interactive: true %}
+            </div>
+          </div>
+          {% comment %} Title {% endcomment %}
+          <div>
+            <label for="review-title" style="{{ font_body_md }} {{ tone_base }} margin-bottom: 4px;">Title <span style="color: #ff0000">*</span></label>
+            <input type="text" id="review-title" placeholder="Maximum 60 characters" style="{{ font_body_md }} {{ tone_base }}" class="review-input">
+          </div>
+          {% comment %} Upload Media {% endcomment %}
+          {% if allow_media %}
+            <div>
+              <p style="{{ font_body_md }} {{ tone_base }}">Upload media</p>
+              <div style="display: flex; justify-content: center; align-items: center; margin: 10px 0px; border: 1px dashed #8A8A8A; padding: 10px; text-align: center; border-radius: 8px; width: 96px; height: 96px">
+                <input type="file" multiple accept="image/*,video/*" style="display: none;" id="media-upload">
+                <label for="media-upload" style="cursor: pointer; {{ font_body_md }} {{ tone_base }}"><p style="margin: 0">+</p>Upload</label>
+              </div>
+              <p style="{{ font_body_sm }} {{ tone_subdued }}">You can upload jpg/png & video (maximum 2000kbs)</p>
+            </div>
+          {% endif %}
+          {% comment %} Name {% endcomment %}
+          <div>
+            <label for="review-name" style="{{ font_body_md }} {{ tone_base }} margin-bottom: 4px;">Name <span style="color: #ff0000">*</span></label>
+            <input type="text" id="review-name" placeholder="Enter your full name" style="{{ font_body_md }} {{ tone_base }}" class="review-input">
+          </div>
+          {% comment %} Email {% endcomment %}
+          <div>
+            <label for="review-email" style="{{ font_body_md }} {{ tone_base }} margin-bottom: 4px;">Email <span style="color: #ff0000">*</span></label>
+            <input type="email" id="review-email" placeholder="Enter your email" style="{{ font_body_md }} {{ tone_base }}" class="review-input">
+          </div>
+          {% comment %} Review content {% endcomment %}
+          <div>
+            <label for="review-body" style="{{ font_body_md }} {{ tone_base }} margin-bottom: 4px;">Your review <span style="color: #ff0000">*</span></label>
+            <textarea id="review-body" placeholder="Write your review..." rows="6" style="{{ font_body_md }} {{ tone_base }} resize: none; font-family: inherit;" class="review-input"></textarea>
+          </div>
+          <div>
+            <label style="{{ font_body_md }} {{ tone_base }}" class="custom-checkbox-wrap">
+              <input type="checkbox" class="custom-checkbox" />
+              <span class="custom-checkbox-faux"></span>
+              <span style="margin-left: 8px;">
+                Save my name, email, and website in this browser for the next time I comment.
+              </span>
+            </label>
+          </div>
+          <button id="submit-review" type="submit" class="submit-button">
+            <span style="{{ font_body_sm }} color: #fff; font-weight: 550">Submit review</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="module" src="{{ 'reviews-processor.js' | asset_url }}" defer></script>
+
+<style>
+  .review-input{
+    display: flex; 
+    align-items: center; 
+    width: 100%; 
+    min-height: 32px; 
+    padding: 6px 12px; 
+    border: 0.04125rem solid #8A8A8A; 
+    border-top-color: #989f94;
+    border-radius: 8px;
+  }
+  .review-input:hover {
+    border-color: #616161;
+  }
+  .review-input:focus{
+    border-color: #1A1A1A;
+    border-width: 0.0625rem;
+    outline: 2px solid #005BD3;
+    outline-offset: 1px;
+  }
+
+.custom-checkbox-wrap {
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+}
+.custom-checkbox {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  margin: 0 !important;
+  width: 16px !important;
+  height: 16px;
+  border: 0.04125rem solid #8A8A8A; 
+  border-radius: 4px;
+  background-color: #fff;
+  cursor: pointer;
+  position: relative;
+}
+.custom-checkbox:checked {
+  background-color: #303030; 
+  border-color: #303030;
+}
+.custom-checkbox:checked::after {
+  content: "";
+  display: block;
+  width: 4px;
+  height: 8.5px;
+  border: solid #fff;
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+  position: absolute;
+  top: 1.5px;
+  left: 5px;
+}
+.custom-checkbox-faux {
+  display: none; 
+}
+
+.submit-button {
+  width: fit-content; 
+  height: fit-content; 
+  background-color: #303030; 
+  padding: 8px 12px; 
+  border: none; 
+  border-radius: 8px; 
+  cursor: pointer;
+    box-shadow:
+    0rem -0.0625rem 0rem 0.0625rem rgba(0, 0, 0, 0.8) inset,
+    0rem 0rem 0rem 0.0625rem rgba(48, 48, 48, 1) inset,
+    0rem 0.03125rem 0rem 0.09375rem rgba(255, 255, 255, 0.25) inset;
+
+  transition: transform 0.2s ease;
+}
+.submit-button:hover{
+  background-color: #1A1A1A; 
+}
+</style>
+
+{% comment %} Responsive {% endcomment %}
+<script>
+  function updateFlexDirection() {
+    const container = document.getElementById('my-flex');
+    if (window.innerWidth <= 750) {
+      container.style.flexDirection = 'column';
+    } else {
+      container.style.flexDirection = 'row';
+    }
+  }
+  updateFlexDirection();
+  window.addEventListener('resize', updateFlexDirection);
+</script>
+
+
