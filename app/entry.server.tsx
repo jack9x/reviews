@@ -4,7 +4,7 @@ import { RemixServer } from "@remix-run/react";
 import { createReadableStreamFromReadable, type EntryContext } from "@remix-run/node";
 import { isbot } from "isbot";
 import { addDocumentResponseHeaders } from "./shopify.server";
-import "./cron/email-cron"; // run cron on server start
+// import "./cron/email-cron"; // run cron on server start
 
 export const streamTimeout = 5000;
 
